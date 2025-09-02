@@ -8,11 +8,13 @@ import co.com.pragma.api.dto.SuccessResponse;
 import co.com.pragma.api.exception.RequestValidator;
 import co.com.pragma.api.mapper.ApplicationMapper;
 import co.com.pragma.model.application.Application;
+import co.com.pragma.security.jwt.JwtProvider;
 import co.com.pragma.usecase.application.ApplicationUseCase;
 import java.math.BigDecimal;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -22,7 +24,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @ContextConfiguration(classes = {RouterRest.class, ApplicationHandler.class})
-@WebFluxTest
+@WebFluxTest(excludeAutoConfiguration = {ReactiveSecurityAutoConfiguration.class})
 class RouterRestTest {
 
   @Autowired
@@ -33,6 +35,8 @@ class RouterRestTest {
   private ApplicationMapper applicationMapper;
   @MockitoBean
   private RequestValidator requestValidator;
+  @MockitoBean
+  private JwtProvider jwtProvider;
 
   @Test
   void testSaveApplication_Success() {
@@ -43,9 +47,10 @@ class RouterRestTest {
         "john.doe@example.com", 1L, 1L);
 
     when(requestValidator.validate(any())).thenReturn(Mono.just(applicationDTO));
+    when(jwtProvider.getSubject(any())).thenReturn("john.doe@example.com");
     when(applicationMapper.toApplication(applicationDTO)).thenReturn(application);
     when(applicationMapper.toApplicationDTO(application)).thenReturn(applicationDTO);
-    when(applicationUseCase.saveApplication(any(Application.class))).thenReturn(
+    when(applicationUseCase.saveApplication(any(Application.class), any())).thenReturn(
         Mono.just(application));
 
     webTestClient.post()

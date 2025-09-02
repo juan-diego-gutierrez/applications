@@ -15,10 +15,11 @@ public class UserService implements UserRepository {
   private final WebClient client;
 
   @CircuitBreaker(name = "userService")
-  public Mono<UserResponse> getUserByEmail(String email) {
+  public Mono<UserResponse> getUserByEmail(String email, String token) {
     return client
         .get()
         .uri("/api/v1/users/{email}", email)
+        .header("Authorization", "Bearer " + token)
         .retrieve()
         .bodyToMono(UserResponse.class);
   }

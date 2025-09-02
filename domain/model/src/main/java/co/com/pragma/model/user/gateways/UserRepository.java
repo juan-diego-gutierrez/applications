@@ -5,5 +5,5 @@ import reactor.core.publisher.Mono;
 
 public interface UserRepository {
 
-  Mono<UserResponse> getUserByEmail(String email);
+  Mono<UserResponse> getUserByEmail(String email, String token);
 }
