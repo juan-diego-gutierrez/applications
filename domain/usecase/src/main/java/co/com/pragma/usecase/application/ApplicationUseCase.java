@@ -21,7 +21,7 @@ public class ApplicationUseCase {
   private final StatusRepository statusRepository;
   private final UserRepository userRepository;
 
-  public Mono<Application> saveApplication(Application application) {
+  public Mono<Application> saveApplication(Application application, String token) {
     return applicationTypeRepository.applicationTypeExists(application.getApplicationTypeId())
         .flatMap(exists -> {
           if (Boolean.FALSE.equals(exists)) {
@@ -29,7 +29,7 @@ public class ApplicationUseCase {
                 Map.of("applicationType", ErrorCode.TYPE_NOT_FOUND.getMessage())));
           }
 
-          return userRepository.getUserByEmail(application.getEmail())
+          return userRepository.getUserByEmail(application.getEmail(), token)
               .flatMap(userResponse -> statusRepository.getStatusByName(PENDING_REVIEW)
                   .flatMap(initialStatus -> {
                     application.setStatusId(initialStatus.getId());

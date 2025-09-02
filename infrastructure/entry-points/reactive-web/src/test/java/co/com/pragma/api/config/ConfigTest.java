@@ -4,9 +4,11 @@ import co.com.pragma.api.ApplicationHandler;
 import co.com.pragma.api.RouterRest;
 import co.com.pragma.api.exception.RequestValidator;
 import co.com.pragma.api.mapper.ApplicationMapper;
+import co.com.pragma.security.jwt.JwtProvider;
 import co.com.pragma.usecase.application.ApplicationUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
@@ -14,7 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 @ContextConfiguration(classes = {RouterRest.class, ApplicationHandler.class})
-@WebFluxTest
+@WebFluxTest(excludeAutoConfiguration = {ReactiveSecurityAutoConfiguration.class})
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class ConfigTest {
 
@@ -26,6 +28,8 @@ class ConfigTest {
   private ApplicationMapper applicationMapper;
   @MockitoBean
   private RequestValidator requestValidator;
+  @MockitoBean
+  private JwtProvider jwtProvider;
 
   @Test
   void corsConfigurationShouldAllowOrigins() {

@@ -46,7 +46,7 @@ class ApplicationUseCaseTest {
     when(applicationTypeRepository.applicationTypeExists(
         application.getApplicationTypeId())).thenReturn(Mono.just(true));
 
-    when(userRepository.getUserByEmail(application.getEmail())).thenReturn(
+    when(userRepository.getUserByEmail(application.getEmail(), "token")).thenReturn(
         Mono.just(new UserResponse("John", "Doe", any(), "", "", application.getEmail(),
             BigDecimal.valueOf(1000000))));
 
@@ -56,7 +56,7 @@ class ApplicationUseCaseTest {
     when(applicationRepository.saveApplication(any(Application.class))).thenReturn(
         Mono.just(application));
 
-    StepVerifier.create(applicationUseCase.saveApplication(application))
+    StepVerifier.create(applicationUseCase.saveApplication(application, "token"))
         .expectNext(application)
         .verifyComplete();
   }
@@ -69,7 +69,7 @@ class ApplicationUseCaseTest {
     when(applicationTypeRepository.applicationTypeExists(
         application.getApplicationTypeId())).thenReturn(Mono.just(false));
 
-    StepVerifier.create(applicationUseCase.saveApplication(application))
+    StepVerifier.create(applicationUseCase.saveApplication(application, "token"))
         .expectErrorMatches(throwable -> throwable instanceof BusinessException &&
             ((BusinessException) throwable).getErrors().containsKey("applicationType") &&
             ((BusinessException) throwable).getErrors().get("applicationType")
@@ -86,10 +86,10 @@ class ApplicationUseCaseTest {
     when(applicationTypeRepository.applicationTypeExists(
         application.getApplicationTypeId())).thenReturn(Mono.just(true));
 
-    when(userRepository.getUserByEmail(application.getEmail())).thenReturn(
+    when(userRepository.getUserByEmail(application.getEmail(), "token")).thenReturn(
         Mono.error(new Throwable()));
 
-    StepVerifier.create(applicationUseCase.saveApplication(application))
+    StepVerifier.create(applicationUseCase.saveApplication(application, "token"))
         .expectErrorMatches(throwable -> throwable instanceof BusinessException &&
             ((BusinessException) throwable).getErrors().containsKey("user") &&
             ((BusinessException) throwable).getErrors().get("user")
