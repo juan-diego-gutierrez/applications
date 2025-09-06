@@ -20,13 +20,13 @@ public class RouterRest {
   @RouterOperations({
       @RouterOperation(path = APPLICATIONS_PATH, method = RequestMethod.POST, beanClass = ApplicationHandler.class, beanMethod = "saveApplication",
           operation = @Operation(summary = "Save a new application", description = "This endpoint allows you to save a new application.")),
-      @RouterOperation(path = APPLICATIONS_PATH, method = RequestMethod.GET, beanClass = ApplicationHandler.class, beanMethod = "getAllApplications",
-          operation = @Operation(summary = "Get all applications", description = "This endpoint allows you to get all applications."))
+      @RouterOperation(path = APPLICATIONS_PATH + "/getAll", method = RequestMethod.POST, beanClass = ApplicationHandler.class, beanMethod = "getAllApplications",
+          operation = @Operation(summary = "Get applications", description = "This endpoint allows you to get applications and filter by status and application type."))
   })
   public RouterFunction<ServerResponse> applicationRoutes(ApplicationHandler applicationHandler) {
     return route()
         .POST(APPLICATIONS_PATH, applicationHandler::saveApplication)
-        .GET(APPLICATIONS_PATH, applicationHandler::getAllApplications)
+        .POST(APPLICATIONS_PATH + "/getAll", applicationHandler::getAllApplications)
         .build();
   }
 }

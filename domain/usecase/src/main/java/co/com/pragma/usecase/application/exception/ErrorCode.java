@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum ErrorCode {
   TYPE_NOT_FOUND("Application type not found"),
   STATUS_NOT_FOUND("Status not found"),
-  USER_NOT_FOUND("User not found");
+  USER_NOT_FOUND("User not found"),
+  APPLICATIONS_NOT_FOUND("Applications not found");
 
   private final String message;
 
