@@ -1,8 +1,11 @@
 package co.com.pragma.usecase.application;
 
 import co.com.pragma.model.application.Application;
+import co.com.pragma.model.application.ApplicationData;
 import co.com.pragma.model.application.gateways.ApplicationRepository;
+import co.com.pragma.model.applicationtype.ApplicationType;
 import co.com.pragma.model.applicationtype.gateways.ApplicationTypeRepository;
+import co.com.pragma.model.status.Status;
 import co.com.pragma.model.status.gateways.StatusRepository;
 import co.com.pragma.model.user.gateways.UserRepository;
 import co.com.pragma.usecase.application.exception.BusinessException;
@@ -40,8 +43,29 @@ public class ApplicationUseCase {
         });
   }
 
-  public Flux<Application> getAllApplications() {
-    return applicationRepository.getAllApplications();
-  }
+  public Flux<ApplicationData> getAllApplications(String status, Long applicationTypeId, int page,
+      int size, String token) {
+    Mono<Long> statusIdMono = (status != null) ?
+        statusRepository.getStatusByName(status)
+            .map(Status::getId)
+            .switchIfEmpty(Mono.error(
+                new BusinessException(Map.of("status", ErrorCode.STATUS_NOT_FOUND.getMessage()))))
+        : Mono.just(0L);
 
+    Mono<Long> applicationTypeIdMono = (applicationTypeId != null) ?
+        applicationTypeRepository.getApplicationTypeById(applicationTypeId)
+            .map(ApplicationType::getId)
+            .switchIfEmpty(Mono.error(new BusinessException(
+                Map.of("applicationType", ErrorCode.TYPE_NOT_FOUND.getMessage()))))
+        : Mono.just(0L);
+
+    return Mono.zip(statusIdMono, applicationTypeIdMono)
+        .flatMapMany(tuple -> {
+          Long statusId = tuple.getT1().equals(0L) ? null : tuple.getT1();
+          Long appTypeId = tuple.getT2().equals(0L) ? null : tuple.getT2();
+
+          return applicationRepository.getAllApplications(statusId, appTypeId, page, size, token);
+        })
+        .switchIfEmpty(applicationRepository.getAllApplications(null, null, page, size, token));
+  }
 }

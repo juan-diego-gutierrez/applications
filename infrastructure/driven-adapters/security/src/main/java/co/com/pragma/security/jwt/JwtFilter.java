@@ -17,7 +17,7 @@ public class JwtFilter implements WebFilter {
   public Mono<Void> filter(ServerWebExchange exchange, @NonNull WebFilterChain chain) {
     ServerHttpRequest request = exchange.getRequest();
     String path = request.getPath().value();
-    if (path.contains("/login")) {
+    if (path.contains("/login") || path.contains("/swagger") || path.contains("/api-docs")) {
       return chain.filter(exchange);
     }
     String auth = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);

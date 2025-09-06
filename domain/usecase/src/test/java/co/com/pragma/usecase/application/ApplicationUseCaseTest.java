@@ -4,7 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import co.com.pragma.model.application.Application;
+import co.com.pragma.model.application.ApplicationData;
 import co.com.pragma.model.application.gateways.ApplicationRepository;
+import co.com.pragma.model.applicationtype.ApplicationType;
 import co.com.pragma.model.applicationtype.gateways.ApplicationTypeRepository;
 import co.com.pragma.model.status.Status;
 import co.com.pragma.model.status.gateways.StatusRepository;
@@ -98,18 +100,40 @@ class ApplicationUseCaseTest {
   }
 
   @Test
-  void testGetAllApplications_Success() {
-    Application application1 = new Application(BigDecimal.valueOf(1000000), 6,
-        "john.doe@example.com", 1L, 1L);
-    Application application2 = new Application(BigDecimal.valueOf(1000000), 12,
-        "john.doe@example2.com", 2L, 1L);
+  void testGetAllApplications_WithStatusAndType() {
+    ApplicationData application1 = new ApplicationData(BigDecimal.valueOf(1000000), 6,
+        "john.doe@example.com", "John", "Vehicle", BigDecimal.valueOf(10), "pending_review",
+        BigDecimal.valueOf(1000000), BigDecimal.valueOf(200000));
 
-    when(applicationRepository.getAllApplications()).thenReturn(
-        Flux.just(application1, application2));
+    ApplicationData application2 = new ApplicationData(BigDecimal.valueOf(1000000), 12,
+        "john.doe@example.com", "John", "Vehicle", BigDecimal.valueOf(10), "pending_review",
+        BigDecimal.valueOf(1000000), BigDecimal.valueOf(300000));
 
-    StepVerifier.create(applicationUseCase.getAllApplications())
-        .expectNext(application1,
-            application2)
+    Mono<Status> statusMono = Mono.just(new Status(1L, "pending_review", "Pending Review"));
+    Mono<ApplicationType> applicationTypeMono = Mono.just(
+        new ApplicationType(1L, "vehicle", BigDecimal.valueOf(0), BigDecimal.valueOf(10000000),
+            BigDecimal.valueOf(10), true));
+    Flux<ApplicationData> applicationDataFlux = Flux.just(application1, application2);
+    Flux<ApplicationData> emptyFlux = Flux.empty();
+
+    statusMono.switchIfEmpty(Mono.empty());
+    applicationTypeMono.switchIfEmpty(Mono.empty());
+    applicationDataFlux.switchIfEmpty(Mono.empty());
+    emptyFlux.switchIfEmpty(Flux.empty());
+
+    when(statusRepository.getStatusByName(any())).thenReturn(statusMono);
+    when(applicationTypeRepository.getApplicationTypeById(any())).thenReturn(applicationTypeMono);
+
+    when(applicationRepository.getAllApplications(1L, 1L, 0, 10, "token")).thenReturn(
+        applicationDataFlux);
+    when(applicationRepository.getAllApplications(null, null, 0, 10, "token")).thenReturn(
+        emptyFlux);
+
+    Flux<ApplicationData> result = applicationUseCase.getAllApplications("pending_review", 1L, 0,
+        10, "token");
+
+    StepVerifier.create(result)
+        .expectNext(application1, application2)
         .verifyComplete();
   }
 }

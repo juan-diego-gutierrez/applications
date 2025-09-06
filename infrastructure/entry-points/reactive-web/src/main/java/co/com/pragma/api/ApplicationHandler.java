@@ -1,6 +1,7 @@
 package co.com.pragma.api;
 
 import co.com.pragma.api.dto.ApplicationDTO;
+import co.com.pragma.api.dto.ApplicationFilterDTO;
 import co.com.pragma.api.dto.SuccessResponse;
 import co.com.pragma.api.exception.InvalidRequestException;
 import co.com.pragma.api.exception.RequestValidator;
@@ -95,31 +96,36 @@ public class ApplicationHandler {
     return Mono.just(false);
   }
 
-  @Operation(summary = "Get all applications", description = "This endpoint allows you to get all applications.")
+  @Operation(summary = "Get applications", description = "This endpoint allows you to get applications and filter by status and application type.")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Returns all existing applications"),
+      @ApiResponse(responseCode = "200", description = "Returns existing applications"),
       @ApiResponse(responseCode = "404", description = "Applications not found")
   })
+  @PreAuthorize("hasAuthority('AGENT')")
   public Mono<ServerResponse> getAllApplications(ServerRequest serverRequest) {
     logger.info("Received request to get all application");
 
-    return applicationUseCase.getAllApplications()
-        .collectList()
-        .flatMap(applications -> {
-          if (applications.isEmpty()) {
-            logger.info("Applications not founded");
-            return ServerResponse.notFound().build();
-          } else {
-            return ServerResponse.ok().bodyValue(
-                new SuccessResponse<>(
-                    "success",
-                    applications,
-                    "Applications retrieved successfully",
-                    LocalDateTime.now(),
-                    serverRequest.path()
-                )
-            );
-          }
-        });
+    String token = extractToken(serverRequest);
+
+    return serverRequest.bodyToMono(ApplicationFilterDTO.class)
+        .flatMap(filter -> applicationUseCase.getAllApplications(filter.getStatus(),
+                filter.getApplicationTypeId(), filter.getPage(), filter.getSize(), token)
+            .collectList()
+            .flatMap(applications -> {
+              if (applications.isEmpty()) {
+                logger.info("Applications not founded");
+                return ServerResponse.notFound().build();
+              } else {
+                return ServerResponse.ok().bodyValue(
+                    new SuccessResponse<>(
+                        "success",
+                        applications,
+                        "Applications retrieved successfully",
+                        LocalDateTime.now(),
+                        serverRequest.path()
+                    )
+                );
+              }
+            }));
   }
 }
